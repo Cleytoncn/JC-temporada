@@ -6,6 +6,10 @@ create table public.jc_organizations (
   id uuid primary key default gen_random_uuid(),
   name text not null check (length(btrim(name)) between 2 and 120),
   slug text not null unique check (slug ~ '^[a-z0-9][a-z0-9-]{2,62}$'),
+  city text not null default 'Caldas Novas',
+  state_code text not null default 'GO',
+  country_code text not null default 'BR',
+  business_timezone text not null default 'America/Sao_Paulo',
   created_at timestamptz not null default now()
 );
 create table public.jc_memberships (
@@ -169,6 +173,22 @@ end; $$;
 create trigger jc_payment_guard before insert on public.jc_payments
 for each row execute function public.jc_guard_payment();
 
+-- Do not allow lowering a reservation below received money.
+create function public.jc_guard_entry_update() returns trigger
+language plpgsql security invoker set search_path='' as $$
+declare v_received numeric(12,2);
+begin
+  select coalesce(sum(amount),0) into v_received
+    from public.jc_payments
+    where organization_id=old.organization_id and calendar_entry_id=old.id;
+  if v_received>0 and (new.kind<>'reservation' or new.total_amount<v_received) then
+    raise exception 'Cannot reduce booking below already received payments';
+  end if;
+  return new;
+end; $$;
+create trigger jc_entry_guard before update on public.jc_calendar_entries
+for each row execute function public.jc_guard_entry_update();
+
 -- Status is derived from actual recorded receipts: yellow -> blue -> green.
 create view public.jc_reservations_with_balance
 with (security_invoker=true) as
@@ -204,18 +224,23 @@ create index jc_audit_by_org on public.jc_audit_log(organization_id,created_at d
 
 create function public.jc_track_change() returns trigger
 language plpgsql security definer set search_path='' as $$
+declare v_org uuid;v_id uuid;v_old jsonb;v_new jsonb;
 begin
+  if tg_op='INSERT' then
+    v_org:=new.organization_id;v_id:=new.id;v_new:=to_jsonb(new);v_old:=null;
+  elsif tg_op='DELETE' then
+    v_org:=old.organization_id;v_id:=old.id;v_old:=to_jsonb(old);v_new:=null;
+  else
+    v_org:=new.organization_id;v_id:=new.id;v_old:=to_jsonb(old);v_new:=to_jsonb(new);
+  end if;
   insert into public.jc_audit_log
     (organization_id,actor_id,entity_kind,entity_id,action,before_value,after_value)
-  values (
-    coalesce(new.organization_id,old.organization_id),
-    auth.uid(),tg_table_name,coalesce(new.id,old.id),
-    tg_op,
-    case when tg_op='INSERT' then null else to_jsonb(old) end,
-    case when tg_op='DELETE' then null else to_jsonb(new) end
-  );
-  return coalesce(new,old);
+  values (v_org,auth.uid(),tg_table_name,v_id,tg_op,v_old,v_new);
+  if tg_op='DELETE' then return old; end if;
+  return new;
 end; $$;
+revoke all on function public.jc_track_change() from public;
+
 create trigger jc_calendar_audit after insert or update or delete on public.jc_calendar_entries
 for each row execute function public.jc_track_change();
 create trigger jc_payment_audit after insert on public.jc_payments
