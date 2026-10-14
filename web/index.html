@@ -171,7 +171,7 @@ function editEntry(kind,id,initial={}){
  if(kind==='reservation'){
   document.querySelectorAll('#inlineGuest input').forEach(i=>i.disabled=state.guests.length>0||Boolean(x.guest_id));
   state.guestSearchResults=[];
-  if(!hasGuests){$('guestSearch').disabled=true;}
+  if(!state.guests.length&&!x.guest_id){$('guestSearch').disabled=true;}
  }
 }
 function editSimple(kind,id){
