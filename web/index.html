@@ -93,7 +93,7 @@ function choose(unitId,start,end){
  const df=x=>new Date(x+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
  const row=(icon,title,desc,action)=>'<div class="jc-row"><span class="jc-icon" aria-hidden="true">'+icon+'</span><div class="jc-copy"><strong>'+title+'</strong><span>'+desc+'</span></div><button class="jc-next" data-action="'+action+'">Avançar ›</button></div>';
  modal('O que você deseja fazer?','<div class="jc-period"><strong>'+html(df(start))+' – '+html(df(end))+'</strong><span>'+nights+' noite'+(nights===1?'':'s')+' · '+html(unit(unitId)?.name||'Imóvel')+'</span></div><div class="jc-options">'+
- row('▣','Criar reserva','Cadastrar uma pré-reserva no período.','chooseBooking')+
+ row('▣','Fazer pré-reserva','Cadastrar uma pré-reserva no período.','chooseBooking')+
  row('▤','Fazer cotação','Calcular valor sem criar uma reserva.','chooseQuote')+
  row('▧','Bloqueio genérico','Bloquear o imóvel nas datas selecionadas.','chooseBlock')+
  row('⚒','Bloqueio para manutenção','Reservar as datas para manutenção.','chooseMaintenance')+
@@ -194,7 +194,7 @@ function editEntry(kind,id,initial={}){
  }else fields+=field('notes','Motivo','text',x.notes||(kind==='block'?'Bloqueio':'Manutenção'),null,false);
  const info=kind==='reservation'?'<div class="status"><b>'+(id?status(x):'Pré-reserva amarela')+'</b><div>Total: '+money(x.total_amount||0)+' · Recebido: '+money(x.received_amount||0)+' · Pendente: '+money(x.balance_due||0)+'</div></div>':'';
  const buttons=(id?'<button class="btn danger" style="margin-right:auto" data-action="cancel">Cancelar registro</button>':'')+(id&&kind==='reservation'&&Number(x.balance_due)>0?'<button class="btn" data-action="payment">+ Receber</button>':'')+'<button class="btn secondary" data-action="close">Fechar</button><button class="btn" data-action="saveEntry" data-kind="'+kind+'">Salvar</button>';
- modal(id?'Editar '+(kind==='reservation'?'reserva':'período'):'Nova '+(kind==='reservation'?'pré-reserva':kind==='block'?'bloqueio':'manutenção'),info+'<form id="entryForm">'+(kind==='reservation'?fields:'<div class="formgrid">'+fields+'</div>')+'</form>',buttons);
+ modal(id?'Editar '+(kind==='reservation'?'reserva':'período'):(kind==='reservation'?'Fazer pré-reserva':'Novo '+(kind==='block'?'bloqueio':'manutenção')),info+'<form id="entryForm">'+(kind==='reservation'?fields:'<div class="formgrid">'+fields+'</div>')+'</form>',buttons);
  if(kind==='reservation'){
   document.querySelectorAll('#inlineGuest input').forEach(i=>i.disabled=state.guests.length>0||Boolean(x.guest_id));
   state.guestSearchResults=[];
