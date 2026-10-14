@@ -33,7 +33,7 @@ async function bootstrap(){const {data:{session},error}=await supabase.auth.getS
 async function loadOrg(){let {data,error}=await supabase.from('jc_memberships').select('organization_id,role').eq('user_id',state.user.id).limit(1);if(error){tab('authArea');msg('authMessage',backendError(error),true);return}if(!data?.length){tab('setupArea');return}state.role=data[0].role;let r=await supabase.from('jc_organizations').select('id,name,city,state_code').eq('id',data[0].organization_id).single();if(r.error){tab('setupArea');msg('setupMessage',backendError(r.error),true);return}state.org=r.data;tab('appArea');$('userEmail').textContent=state.user.email;await refresh()}
 async function refresh(){if(!state.org||refreshing)return;refreshing=true;setNotice('Carregando informações do banco...');try{
 let id=state.org.id,first=fmt(new Date(state.year,state.month,1)),last=fmt(new Date(state.year,state.month+1,1));
-let queries=await Promise.all([supabase.from('jc_property_groups').select('id,name').eq('organization_id',id).order('name').limit(1000),supabase.from('jc_properties').select('id,name,group_id,capacity,base_nightly_rate,internal_code,active').eq('organization_id',id).eq('active',true).order('name').limit(1000),supabase.from('jc_guests').select('id,full_name,email,phone').eq('organization_id',id).order('full_name').limit(1000)]);
+let queries=await Promise.all([supabase.from('jc_property_groups').select('id,name').eq('organization_id',id).order('name').limit(1000),supabase.from('jc_properties').select('id,name,group_id,capacity,base_nightly_rate,internal_code,active').eq('organization_id',id).eq('active',true).order('name').limit(1000),supabase.from('jc_guests').select('id,full_name,rg,cpf,address,postal_code,city,neighborhood,birth_date,email,phone').eq('organization_id',id).order('full_name').limit(1000)]);
 for(let q of queries)if(q.error)throw q.error;state.groups=queries[0].data||[];state.units=queries[1].data||[];state.guests=queries[2].data||[];
 let all=[],from=0;
 while(true){let q=await supabase.from('jc_reservations_with_balance').select('id,organization_id,property_id,guest_id,kind,check_in,check_out,total_amount,received_amount,balance_due,occupancy_status,source_channel,internal_reference,notes,cancelled_at').eq('organization_id',id).is('cancelled_at',null).lt('check_in',last).gt('check_out',first).order('check_in').range(from,from+999);if(q.error)throw q.error;all.push(...(q.data||[]));if((q.data||[]).length<1000||from>=9000)break;from+=1000}state.entries=all;setNotice('');render();
@@ -49,19 +49,19 @@ $('pageTitle').textContent=titles[state.page];
 $('pageSubtitle').textContent=state.page==='mapa'?'Arraste do dia de entrada até o dia da saída para cadastrar.':'Dados conectados ao Supabase em tempo real após salvar.';
 $('sidebar').innerHTML='<div class="section">Central de reservas</div>'+nav.map(a=>'<button class="nav '+(state.page===a[0]?'active':'')+'" data-page="'+a[0]+'"><i>'+a[1]+'</i>'+a[2]+'</button>').join('')+'<div class="sidefoot">JC Temporada · Caldas Novas/GO<br>Acesso: '+html(state.role)+'<br>Integrações de canais ainda não ativadas.</div>';
 $('mobile').innerHTML=nav.map(a=>'<button class="'+(state.page===a[0]?'active':'')+'" data-page="'+a[0]+'"><i>'+a[1]+'</i>'+a[2].split(' ')[0]+'</button>').join('');
-$('actions').innerHTML=state.page==='imoveis'?'<button class="btn secondary" data-action="newGroup">+ Empreendimento</button><button class="btn" data-action="newUnit">+ Imóvel</button>':state.page==='hospedes'?'<button class="btn" data-action="newGuest">+ Hóspede</button>':'<button class="btn secondary" data-action="newBlock">+ Bloqueio</button><button class="btn secondary" data-action="newMaintenance">+ Manutenção</button><button class="btn" data-action="newBooking">+ Pré-reserva</button>';
+$('actions').innerHTML=state.page==='imoveis'?'<button class="btn secondary" data-action="newGroup">+ Condomínio</button><button class="btn" data-action="newUnit">+ Imóvel</button>':state.page==='hospedes'?'<button class="btn" data-action="newGuest">+ Hóspede</button>':'<button class="btn secondary" data-action="newBlock">+ Bloqueio</button><button class="btn secondary" data-action="newMaintenance">+ Manutenção</button><button class="btn" data-action="newBooking">+ Pré-reserva</button>';
 $('content').innerHTML=state.page==='mapa'?renderCalendar():state.page==='reservas'?renderReservations():state.page==='imoveis'?renderProperties():state.page==='hospedes'?renderGuests():renderFinance()}
 function renderCalendar(){
 let max=new Date(state.year,state.month+1,0).getDate(),w=Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--day'))||72,width=max*w;
 let title=new Date(state.year,state.month,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
 let s='<div class="frame"><div class="framehead"><div class="inline"><button class="btn secondary" data-action="prev">‹</button><span class="month">'+html(title)+'</span><button class="btn secondary" data-action="next">›</button><button class="btn secondary" data-action="today">Hoje</button></div><div class="legend">'+[['yellow','Pré-reserva'],['blue','Parcial'],['green','Quitada'],['red','Bloqueio'],['gray','Manutenção']].map(([cl,label])=>'<span><i class="'+cl+'"></i>'+label+'</span>').join('')+'</div></div>';
-s+='<div class="filter"><input id="find" placeholder="Buscar imóvel..." value="'+html(state.search)+'"><select id="groupFilter"><option value="all">Todos os empreendimentos</option>'+opts(state.groups.map(g=>[g.id,g.name]),state.groupFilter)+'</select><button class="btn secondary" data-action="expand">Expandir</button><span class="sub">Arraste na faixa livre</span></div>';
+s+='<div class="filter"><input id="find" placeholder="Buscar imóvel..." value="'+html(state.search)+'"><select id="groupFilter"><option value="all">Todos os condomínios</option>'+opts(state.groups.map(g=>[g.id,g.name]),state.groupFilter)+'</select><button class="btn secondary" data-action="expand">Expandir</button><span class="sub">Arraste na faixa livre</span></div>';
 let list=state.units.filter(u=>(state.groupFilter==='all'||u.group_id===state.groupFilter)&&(u.name+' '+u.internal_code).toLowerCase().includes(state.search.toLowerCase()));
 let shown=list.slice(0,state.visible);
 s+='<div class="scroll" id="calScroll"><div class="hrow"><div class="left">ACOMODAÇÕES</div><div class="days" style="width:'+width+'px">';
 for(let n=1;n<=max;n++){let date=fmt(new Date(state.year,state.month,n)),wd=['DOM','SEG','TER','QUA','QUI','SEX','SÁB'][new Date(state.year,state.month,n).getDay()];s+='<div class="day '+(date===fmt(new Date())?'today':'')+'"><span>'+wd+'</span><b>'+n+'</b></div>'}s+='</div></div>';
 let gMap=new Map(state.groups.map(g=>[g.id,g.name]));let groups=[...new Set(shown.map(u=>u.group_id||'no-group'))];
-for(let groupId of groups){let members=shown.filter(u=>(u.group_id||'no-group')===groupId);s+='<div class="grow"><div class="left">'+html(gMap.get(groupId)||'Sem empreendimento')+'<button class="collapse" data-action="collapse" data-group="'+html(groupId)+'">'+(state.closed[groupId]?'+':'−')+'</button></div><div class="fill" style="width:'+width+'px"></div></div>';if(state.closed[groupId])continue;
+for(let groupId of groups){let members=shown.filter(u=>(u.group_id||'no-group')===groupId);s+='<div class="grow"><div class="left">'+html(gMap.get(groupId)||'Sem condomínio')+'<button class="collapse" data-action="collapse" data-group="'+html(groupId)+'">'+(state.closed[groupId]?'+':'−')+'</button></div><div class="fill" style="width:'+width+'px"></div></div>';if(state.closed[groupId])continue;
 for(let u of members){s+='<div class="urow"><div class="left"><span class="ellipsis" title="'+html(u.name)+'">'+html(u.name)+'</span><button class="plus" data-action="unitBooking" data-unit="'+u.id+'">+</button></div><div class="track" data-unit="'+u.id+'" style="width:'+width+'px">';
 for(let d=1;d<=max;d++)s+='<button class="blank" data-day="'+d+'" data-unit="'+u.id+'" style="left:'+(d-1)*w+'px" aria-label="Selecionar dia '+d+'"></button>';
 let today=new Date();if(today.getFullYear()===state.year&&today.getMonth()===state.month)s+='<div class="todayline" style="left:'+(today.getDate()-1)*w+'px"></div>';
@@ -75,7 +75,7 @@ if(list.length>shown.length)s+='<button class="btn secondary" data-action="more"
 if(!state.units.length)s+='<div class="status">Nenhum imóvel cadastrado. Comece pela aba <b>Imóveis</b> e crie seu primeiro apartamento.</div>';
 return s}
 function renderReservations(){return '<div class="frame"><div class="framehead"><h2>Reservas e registros do mês</h2><button class="btn secondary" data-action="reload">Atualizar</button></div><div class="tablewrap"><table class="table"><thead><tr><th>Referência</th><th>Imóvel</th><th>Hóspede/motivo</th><th>Entrada</th><th>Saída</th><th>Total</th><th>Recebido</th><th>Situação</th><th></th></tr></thead><tbody>'+state.entries.map(e=>'<tr><td>'+html(e.internal_reference||e.id.slice(0,8))+'</td><td>'+html(unit(e.property_id)?.name||'—')+'</td><td>'+html(e.kind==='reservation'?(guest(e.guest_id)?.full_name||'—'):(e.notes||status(e)))+'</td><td>'+e.check_in.split('-').reverse().join('/')+'</td><td>'+e.check_out.split('-').reverse().join('/')+'</td><td>'+money(e.total_amount)+'</td><td>'+money(e.received_amount)+'</td><td><span class="pill '+cls(e)+'">'+status(e)+'</span></td><td><button class="linkbtn" data-action="edit" data-id="'+e.id+'">Abrir</button></td></tr>').join('')+'</tbody></table>'+(state.entries.length?'':'<div class="empty">Ainda não há registros neste mês.</div>')+'</div></div>'}
-function renderProperties(){return '<div class="frame"><div class="framehead"><h2>Imóveis cadastrados ('+state.units.length+')</h2></div><div class="tablewrap"><table class="table"><thead><tr><th>Código</th><th>Imóvel</th><th>Empreendimento</th><th>Capacidade</th><th>Diária base</th><th></th></tr></thead><tbody>'+state.units.map(u=>'<tr><td>'+html(u.internal_code)+'</td><td>'+html(u.name)+'</td><td>'+html(state.groups.find(g=>g.id===u.group_id)?.name||'—')+'</td><td>'+u.capacity+'</td><td>'+money(u.base_nightly_rate)+'</td><td><button class="linkbtn" data-action="editUnit" data-id="'+u.id+'">Editar</button></td></tr>').join('')+'</tbody></table>'+(state.units.length?'':'<div class="empty">Cadastre seu primeiro imóvel.</div>')+'</div></div>'}
+function renderProperties(){return '<div class="frame"><div class="framehead"><h2>Imóveis cadastrados ('+state.units.length+')</h2></div><div class="tablewrap"><table class="table"><thead><tr><th>Código</th><th>Imóvel</th><th>Condomínio</th><th>Capacidade</th><th>Diária base</th><th></th></tr></thead><tbody>'+state.units.map(u=>'<tr><td>'+html(u.internal_code)+'</td><td>'+html(u.name)+'</td><td>'+html(state.groups.find(g=>g.id===u.group_id)?.name||'—')+'</td><td>'+u.capacity+'</td><td>'+money(u.base_nightly_rate)+'</td><td><button class="linkbtn" data-action="editUnit" data-id="'+u.id+'">Editar</button></td></tr>').join('')+'</tbody></table>'+(state.units.length?'':'<div class="empty">Cadastre seu primeiro imóvel.</div>')+'</div></div>'}
 function renderGuests(){return '<div class="frame"><div class="framehead"><h2>Hóspedes cadastrados ('+state.guests.length+')</h2></div><div class="tablewrap"><table class="table"><thead><tr><th>Nome</th><th>Telefone</th><th>E-mail</th><th></th></tr></thead><tbody>'+state.guests.map(g=>'<tr><td>'+html(g.full_name)+'</td><td>'+html(g.phone||'—')+'</td><td>'+html(g.email||'—')+'</td><td><button class="linkbtn" data-action="editGuest" data-id="'+g.id+'">Editar</button></td></tr>').join('')+'</tbody></table>'+(state.guests.length?'':'<div class="empty">Nenhum hóspede cadastrado.</div>')+'</div></div>'}
 function renderFinance(){let es=state.entries.filter(e=>e.kind==='reservation'),total=es.reduce((v,e)=>v+Number(e.total_amount),0),paid=es.reduce((v,e)=>v+Number(e.received_amount),0);
 return '<div class="stats">'+[['Imóveis ativos',state.units.length],['Reservas no mês',es.length],['Total contratado',money(total)],['Total recebido',money(paid)]].map(a=>'<div class="stat"><small>'+a[0]+'</small><b>'+a[1]+'</b></div>').join('')+'</div><div class="status">Valores referentes às reservas exibidas no mês. São recebimentos registrados, não conciliação com bancos, Booking, Airbnb, Decolar ou Expedia.</div>'+renderReservations()}
@@ -83,24 +83,107 @@ function modal(title,body,buttons){$('modalTitle').textContent=title;$('modalBod
 function close(){state.editing=null;state.choosing=null;state.mode='';$('overlay').classList.add('hidden')}
 function field(name,label,type,value,options,required=true){let control=options?'<select name="'+name+'" '+(required?'required':'')+'>'+opts(options,value)+'</select>':'<input type="'+type+'" name="'+name+'" value="'+html(value??'')+'" '+(type==='number'?'min="0" step="0.01"':'')+' '+(required?'required':'')+'>';return '<div class="field"><label>'+label+'</label>'+control+'</div>'}
 function choose(unitId,start,end){state.choosing={unit:unitId,start,end};modal('Criar registro','<div class="status">'+html(unit(unitId)?.name||'Imóvel')+' · '+start+' até '+end+'</div><div class="choice"><button data-action="chooseBooking"><i class="dot yellow"></i> Pré-reserva (amarela)</button><button data-action="chooseBlock"><i class="dot red"></i> Bloqueio (vermelho)</button><button data-action="chooseMaintenance"><i class="dot gray"></i> Manutenção (cinza)</button></div>')}
-function editEntry(kind,id,initial={}){if(!state.units.length){alert('Cadastre primeiro um imóvel.');return}if(kind==='reservation'&&!state.guests.length){alert('Cadastre um hóspede primeiro.');return}state.mode='entry';state.editing=id||null;
-let e=id?state.entries.find(x=>x.id===id):null;
-let x=e||{},preset=state.choosing||initial,start=x.check_in||preset.start||fmt(new Date()),end=x.check_out||preset.end||dplus(start,2);
-let fields=field('property_id','Imóvel','text',x.property_id||preset.unit||state.units[0].id,state.units.map(u=>[u.id,u.name]))+field('check_in','Entrada','date',start)+field('check_out','Saída','date',end);
-if(kind==='reservation')fields+=field('guest_id','Hóspede','text',x.guest_id||state.guests[0].id,state.guests.map(g=>[g.id,g.full_name]))+field('total_amount','Valor total (R$)','number',x.total_amount||500)+field('internal_reference','Referência','text',x.internal_reference||'JC-'+Date.now().toString().slice(-6))+field('source_channel','Origem','text',x.source_channel||'direct',[['direct','Direta / WhatsApp'],['other','Outra origem']]);
-else fields+=field('notes','Motivo','text',x.notes||(kind==='block'?'Bloqueio':'Manutenção'),null,false);
-let moneyPanel=kind==='reservation'?'<div class="status"><b>'+ (id?status(x):'Pré-reserva amarela')+'</b><div>Total: '+money(x.total_amount||0)+' · Recebido: '+money(x.received_amount||0)+' · Pendente: '+money(x.balance_due||0)+'</div>Cor calculada automaticamente conforme pagamentos registrados.</div>':'';
-let buttons=(id?'<button class="btn danger" style="margin-right:auto" data-action="cancel">Cancelar registro</button>':'')+(id&&kind==='reservation'&&Number(x.balance_due)>0?'<button class="btn" data-action="payment">+ Receber</button>':'')+'<button class="btn secondary" data-action="close">Fechar</button><button class="btn" data-action="saveEntry" data-kind="'+kind+'">Salvar</button>';
-modal(id?'Editar '+(kind==='reservation'?'reserva':'período'):'Nova '+(kind==='reservation'?'pré-reserva':kind==='block'?'bloqueio':'manutenção'),moneyPanel+'<form id="entryForm"><div class="formgrid">'+fields+'</div></form>',buttons)}
-function editSimple(kind,id){state.mode=kind;state.editing=id||null;let x=id?(kind==='property'?unit(id):kind==='guest'?guest(id):state.groups.find(g=>g.id===id))||{}:{};
-let f=kind==='property'?field('name','Nome do apartamento','text',x.name)+field('internal_code','Código interno','text',x.internal_code||'AP-'+Date.now().toString().slice(-5))+field('group_id','Empreendimento','text',x.group_id||'', [['','Sem empreendimento'],...state.groups.map(g=>[g.id,g.name])],false)+field('capacity','Capacidade de pessoas','number',x.capacity||4)+field('base_nightly_rate','Diária base R$','number',x.base_nightly_rate||300):kind==='guest'?field('full_name','Nome completo','text',x.full_name)+field('phone','Telefone','text',x.phone,null,false)+field('email','E-mail','email',x.email,null,false):field('name','Nome do empreendimento','text',x.name);
-modal(id?'Editar cadastro':'Novo cadastro','<form id="simpleForm"><div class="formgrid">'+f+'</div></form>','<button class="btn secondary" data-action="close">Cancelar</button><button class="btn" data-action="saveSimple">Salvar</button>')}
-async function saveSimple(){if(operation)return;let form=$('simpleForm');if(!form.reportValidity())return;let fields=Object.fromEntries(new FormData(form).entries()),kind=state.mode;let table=kind==='property'?'jc_properties':kind==='guest'?'jc_guests':'jc_property_groups';
-if(kind==='property'){fields.group_id=fields.group_id||null;fields.capacity=Number(fields.capacity);fields.base_nightly_rate=Number(fields.base_nightly_rate)}if(kind==='guest'){fields.phone=fields.phone||null;fields.email=fields.email||null}
-fields.organization_id=state.org.id;operation=true;try{let q=state.editing?await supabase.from(table).update(fields).eq('id',state.editing).eq('organization_id',state.org.id):await supabase.from(table).insert(fields);if(q.error)throw q.error;close();await refresh()}catch(e){alert(backendError(e))}finally{operation=false}}
-async function saveEntry(kind){if(operation)return;let form=$('entryForm');if(!form.reportValidity())return;let f=Object.fromEntries(new FormData(form).entries());if(f.check_out<=f.check_in){alert('A saída deve ser depois da entrada.');return}
-if(kind==='reservation'){f.total_amount=Number(f.total_amount);if(f.total_amount<=0){alert('Informe o valor total da reserva.');return}}else {f.total_amount=0;f.guest_id=null;f.source_channel='direct';f.internal_reference=null}
-f.kind=kind;f.organization_id=state.org.id;operation=true;try{let q=state.editing?await supabase.from('jc_calendar_entries').update(f).eq('id',state.editing).eq('organization_id',state.org.id):await supabase.from('jc_calendar_entries').insert(f);if(q.error)throw q.error;close();await refresh()}catch(e){alert(backendError(e))}finally{operation=false}}
+
+function validCPF(x){x=String(x||'').replace(/\D/g,'');if(!/^\d{11}$/.test(x)||/^(\d)\1{10}$/.test(x))return false;for(let n=9;n<=10;n++){let sum=0;for(let i=0;i<n;i++)sum+=Number(x[i])*(n+1-i);let digit=(sum*10)%11;if(digit===10)digit=0;if(digit!==Number(x[n]))return false;}return true}
+function guestFields(pre='',g={}){
+ return field(pre+'full_name','Nome completo','text',g.full_name||'')+
+ field(pre+'rg','RG','text',g.rg||'')+
+ field(pre+'cpf','CPF','text',g.cpf||'')+
+ field(pre+'birth_date','Data de nascimento','date',g.birth_date||'')+
+ field(pre+'email','E-mail','email',g.email||'')+
+ field(pre+'phone','Telefone (opcional)','tel',g.phone||'',null,false)+
+ field(pre+'address','Endereço (rua e número)','text',g.address||'')+
+ field(pre+'neighborhood','Bairro','text',g.neighborhood||'')+
+ field(pre+'city','Cidade','text',g.city||'')+
+ field(pre+'postal_code','CEP','text',g.postal_code||'');
+}
+function normalizedGuest(f,pre=''){
+ const get=k=>String(f[pre+k]||'').trim();
+ const g={full_name:get('full_name'),rg:get('rg'),cpf:get('cpf').replace(/\D/g,''),birth_date:get('birth_date'),email:get('email').toLowerCase(),phone:get('phone')||null,address:get('address'),neighborhood:get('neighborhood'),city:get('city'),postal_code:get('postal_code').replace(/\D/g,'')};
+ if(g.full_name.length<3||g.rg.length<3||!g.address||!g.neighborhood||!g.city||!g.birth_date||!g.email)throw Error('Preencha todos os dados do hóspede.');
+ if(!validCPF(g.cpf))throw Error('CPF inválido. Confira os 11 dígitos.');
+ if(!/^\d{8}$/.test(g.postal_code))throw Error('CEP inválido: informe 8 dígitos.');
+ if(g.birth_date>fmt(new Date()))throw Error('Data de nascimento não pode ser futura.');
+ return g;
+}
+function toggleInlineGuest(){
+ const pane=$('inlineGuest'),sel=document.querySelector('#entryForm [name="guest_id"]');
+ if(!pane||!sel||!state.guests.length)return;
+ const open=pane.classList.contains('hidden');pane.classList.toggle('hidden',!open);
+ pane.querySelectorAll('input').forEach(i=>i.disabled=!open);
+ sel.disabled=open;sel.required=!open;
+ document.querySelector('[data-action="toggleInlineGuest"]').textContent=open?'Usar hóspede cadastrado':'+ Cadastrar novo hóspede';
+}
+function editEntry(kind,id,initial={}){
+ if(!state.units.length){alert('Cadastre primeiro um imóvel.');return}
+ state.mode='entry';state.editing=id||null;
+ const e=id?state.entries.find(x=>x.id===id):null,x=e||{},preset=state.choosing||initial,start=x.check_in||preset.start||fmt(new Date()),end=x.check_out||preset.end||dplus(start,2);
+ let fields=field('property_id','Imóvel','text',x.property_id||preset.unit||state.units[0].id,state.units.map(u=>[u.id,u.name]))+field('check_in','Entrada','date',start)+field('check_out','Saída','date',end);
+ if(kind==='reservation'){
+  const hasGuests=state.guests.length>0;
+  fields+='<div class="full">'+field('guest_id','Hóspede cadastrado','text',x.guest_id||state.guests[0]?.id||'',[['','Selecione um hóspede'],...state.guests.map(g=>[g.id,g.full_name])],hasGuests)+
+   '<button type="button" class="btn secondary" data-action="toggleInlineGuest" '+(hasGuests?'':'disabled')+' style="margin-top:9px">'+(hasGuests?'+ Cadastrar novo hóspede':'Cadastro de novo hóspede')+'</button></div>'+
+   '<div class="full '+(hasGuests?'hidden':'')+'" id="inlineGuest"><div class="status">Novo hóspede — sem sair da pré-reserva</div><div class="formgrid">'+guestFields('new_')+'</div></div>'+
+   field('total_amount','Valor total (R$)','number',x.total_amount||500)+field('internal_reference','Referência','text',x.internal_reference||'JC-'+Date.now().toString().slice(-6))+
+   field('source_channel','Origem','text',x.source_channel||'direct',[['direct','Direta / WhatsApp'],['airbnb','Airbnb'],['booking','Booking'],['decolar','Decolar'],['expedia','Expedia'],['other','Outra origem']]);
+ }else fields+=field('notes','Motivo','text',x.notes||(kind==='block'?'Bloqueio':'Manutenção'),null,false);
+ const info=kind==='reservation'?'<div class="status"><b>'+(id?status(x):'Pré-reserva amarela')+'</b><div>Total: '+money(x.total_amount||0)+' · Recebido: '+money(x.received_amount||0)+' · Pendente: '+money(x.balance_due||0)+'</div>Cor calculada automaticamente conforme pagamentos.</div>':'';
+ const buttons=(id?'<button class="btn danger" style="margin-right:auto" data-action="cancel">Cancelar registro</button>':'')+(id&&kind==='reservation'&&Number(x.balance_due)>0?'<button class="btn" data-action="payment">+ Receber</button>':'')+'<button class="btn secondary" data-action="close">Fechar</button><button class="btn" data-action="saveEntry" data-kind="'+kind+'">Salvar</button>';
+ modal(id?'Editar '+(kind==='reservation'?'reserva':'período'):'Nova '+(kind==='reservation'?'pré-reserva':kind==='block'?'bloqueio':'manutenção'),info+'<form id="entryForm"><div class="formgrid">'+fields+'</div></form>',buttons);
+ if(kind==='reservation'){
+  document.querySelectorAll('#inlineGuest input').forEach(i=>i.disabled=state.guests.length>0);
+  if(!state.guests.length){let g=document.querySelector('#entryForm [name="guest_id"]');g.disabled=true;g.required=false;}
+ }
+}
+function editSimple(kind,id){
+ state.mode=kind;state.editing=id||null;
+ const x=id?(kind==='property'?unit(id):kind==='guest'?guest(id):state.groups.find(g=>g.id===id))||{}:{};
+ const f=kind==='property'?
+ field('name','Nome do imóvel','text',x.name)+field('internal_code','Código interno','text',x.internal_code||'AP-'+Date.now().toString().slice(-5))+
+ field('group_id','Condomínio / empreendimento (opcional)','text',x.group_id||'',[['','Sem condomínio'],...state.groups.map(g=>[g.id,g.name])],false)+
+ field('capacity','Capacidade de pessoas','number',x.capacity||4)+field('base_nightly_rate','Diária base R$','number',x.base_nightly_rate||300):
+ kind==='guest'?guestFields('',x):field('name','Nome do condomínio / empreendimento','text',x.name);
+ modal(id?'Editar cadastro':'Novo cadastro','<form id="simpleForm"><div class="formgrid">'+f+'</div></form>','<button class="btn secondary" data-action="close">Cancelar</button><button class="btn" data-action="saveSimple">Salvar</button>');
+}
+
+
+async function saveSimple(){
+ if(operation)return;const form=$('simpleForm');if(!form.reportValidity())return;
+ let f=Object.fromEntries(new FormData(form).entries()),kind=state.mode;
+ const table=kind==='property'?'jc_properties':kind==='guest'?'jc_guests':'jc_property_groups';
+ if(kind==='property'){f.group_id=f.group_id||null;f.capacity=Number(f.capacity);f.base_nightly_rate=Number(f.base_nightly_rate)}
+ if(kind==='guest'){try{f=normalizedGuest(f)}catch(e){alert(e.message);return}}
+ f.organization_id=state.org.id;operation=true;
+ try{let q=state.editing?await supabase.from(table).update(f).eq('id',state.editing).eq('organization_id',state.org.id):await supabase.from(table).insert(f);if(q.error)throw q.error;close();await refresh()}catch(e){alert(backendError(e))}finally{operation=false}
+}
+async function saveEntry(kind){
+ if(operation)return;const form=$('entryForm');if(!form.reportValidity())return;
+ let f=Object.fromEntries(new FormData(form).entries());
+ if(f.check_out<=f.check_in){alert('A saída deve ser depois da entrada.');return}
+ const newInline=kind==='reservation'&&!$('inlineGuest').classList.contains('hidden');
+ let newGuest=null;
+ if(kind==='reservation'){
+  f.total_amount=Number(f.total_amount);
+  if(!Number.isFinite(f.total_amount)||f.total_amount<=0){alert('Informe o valor total da reserva.');return}
+  if(newInline){try{newGuest=normalizedGuest(f,'new_')}catch(e){alert(e.message);return}}
+  else if(!f.guest_id){alert('Selecione ou cadastre um hóspede.');return}
+ }else{f.total_amount=0;f.guest_id=null;f.source_channel='direct';f.internal_reference=null}
+ for(const key of Object.keys(f))if(key.startsWith('new_'))delete f[key];
+ f.kind=kind;f.organization_id=state.org.id;operation=true;
+ try{
+  if(newGuest){
+   if(form.dataset.newGuestSavedId)f.guest_id=form.dataset.newGuestSavedId;
+   else{
+    const r=await supabase.from('jc_guests').insert({...newGuest,organization_id:state.org.id}).select('id').single();
+    if(r.error)throw r.error;
+    f.guest_id=r.data.id;form.dataset.newGuestSavedId=r.data.id;
+   }
+  }
+  const q=state.editing?await supabase.from('jc_calendar_entries').update(f).eq('id',state.editing).eq('organization_id',state.org.id):await supabase.from('jc_calendar_entries').insert(f);
+  if(q.error)throw q.error;close();await refresh();
+ }catch(e){alert((form.dataset.newGuestSavedId?'Hóspede cadastrado, mas pré-reserva não salva. Tente novamente sem duplicar o hóspede. ':'')+backendError(e))}finally{operation=false}
+}
+
 async function cancelEntry(){if(!state.editing)return;if(!confirm('Cancelar este registro e liberar as datas? O histórico será preservado.'))return;operation=true;try{let q=await supabase.from('jc_calendar_entries').update({cancelled_at:new Date().toISOString()}).eq('id',state.editing).eq('organization_id',state.org.id);if(q.error)throw q.error;close();await refresh()}catch(e){alert(backendError(e))}finally{operation=false}}
 function payment(){let e=state.entries.find(x=>x.id===state.editing);if(!e)return;state.mode='payment';
 modal('Registrar recebimento','<div class="status"><b>'+html(e.internal_reference||'Reserva')+'</b><div>Valor total: '+money(e.total_amount)+'</div><div>Recebido: '+money(e.received_amount)+'</div><div>Saldo: '+money(e.balance_due)+'</div>Ao confirmar, a cor será recalculada automaticamente.</div><form id="paymentForm"><div class="formgrid">'+field('amount','Valor recebido R$','number',e.balance_due)+field('paid_on','Data do pagamento','date',fmt(new Date()))+field('method','Forma','text','pix',[['pix','Pix'],['cash','Dinheiro'],['card','Cartão'],['transfer','Transferência'],['other','Outro']])+field('note','Observação','text','Pagamento registrado',null,false)+'</div></form>','<button class="btn secondary" data-action="backEntry">Voltar</button><button class="btn" data-action="savePayment">Registrar pagamento</button>')}
@@ -119,7 +202,7 @@ if(a==='newBooking'||a==='unitBooking'){state.choosing=null;return editEntry('re
 if(a==='newBlock'){state.choosing=null;return editEntry('block')}if(a==='newMaintenance'){state.choosing=null;return editEntry('maintenance')}
 if(a==='chooseBooking')return editEntry('reservation');if(a==='chooseBlock')return editEntry('block');if(a==='chooseMaintenance')return editEntry('maintenance');
 if(a==='edit'){let e=state.entries.find(x=>x.id===b.dataset.id);if(e){state.choosing=null;editEntry(e.kind,e.id)}return}
-if(a==='saveSimple')return saveSimple();if(a==='saveEntry')return saveEntry(b.dataset.kind);if(a==='cancel')return cancelEntry();
+if(a==='toggleInlineGuest')return toggleInlineGuest();if(a==='saveSimple')return saveSimple();if(a==='saveEntry')return saveEntry(b.dataset.kind);if(a==='cancel')return cancelEntry();
 if(a==='applyNewPassword'){let f=$('recoverPasswordForm');if(!f.reportValidity())return;let pw=new FormData(f).get('password');let {error}=await supabase.auth.updateUser({password:pw});if(error)alert(backendError(error));else{close();alert('Senha atualizada. Você já pode entrar no sistema.')}return}if(a==='payment')return payment();if(a==='savePayment')return savePayment();if(a==='backEntry'){let e=state.entries.find(x=>x.id===state.editing);if(e)editEntry(e.kind,e.id);return}
 if(a==='prev'||a==='next'||a==='today'){if(a==='today'){state.year=new Date().getFullYear();state.month=new Date().getMonth()}else{state.month+=a==='next'?1:-1;if(state.month>11){state.month=0;state.year++}if(state.month<0){state.month=11;state.year--}}await refresh();return}
 if(a==='reload')return refresh();if(a==='more'){state.visible+=40;render();return}if(a==='collapse'){state.closed[b.dataset.group]=!state.closed[b.dataset.group];render();return}if(a==='expand'){state.closed={};render();return}
