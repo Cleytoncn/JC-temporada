@@ -14,11 +14,36 @@
 
 /* Fluxo de reserva em três colunas, conforme referência enviada */
 .overlay:has(.jc-booking-layout) .modal{max-width:1240px;width:min(96vw,1240px)}.jc-booking-layout{display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;align-items:start}.jc-booking-panel h2{font-size:18px;font-weight:600;margin:0 0 12px}.jc-booking-panel .formgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.jc-booking-panel .formgrid>.full{grid-column:1/-1}.jc-unit-summary{background:#fff;border:1px solid #dfe5ea;border-radius:7px;padding:16px;margin-bottom:14px;display:flex;flex-direction:column;gap:5px;min-height:96px}.jc-unit-summary strong{font-size:15px}.jc-unit-summary span{color:#217494}.jc-unit-summary small{color:#89949b}.jc-panel-inner{background:#fff;border:1px solid #dfe5ea;border-radius:7px;padding:15px}.jc-booking-hint{font-size:12px;color:#6c8898;margin-top:10px}.jc-booking-panel .field input,.jc-booking-panel .field select{width:100%;min-width:0}@media(max-width:900px){.jc-booking-layout{grid-template-columns:1fr}.overlay:has(.jc-booking-layout) .modal{width:min(96vw,700px)}}
+
+/* Novo menu lateral JC Temporada — versão 15/10 */
+:root{--nav:#132f41;--bg:#f3f6f9;--grey:#8657b5;--accent:#1289ae;--fixed:228px}
+body{color:#294456}.top{height:68px;position:sticky;top:0;z-index:17;padding:0 22px;box-shadow:0 1px 5px #09243410}
+.top .logo{font-size:20px}.top .mark{background:linear-gradient(135deg,#15a4c1,#116689)}
+.shell{min-height:calc(100vh - 68px)}
+aside#sidebar{width:249px;min-width:249px;min-height:calc(100vh - 68px);padding:0;background:#132f41}
+.sidebar-brand{display:flex;align-items:center;gap:10px;padding:22px 19px 16px;border-bottom:1px solid #ffffff19;margin-bottom:10px}
+.sidebar-logo{background:#178aab;color:#fff;width:35px;height:35px;border-radius:8px;display:grid;place-items:center;font-weight:850}
+.sidebar-brand strong{display:block;font-size:12px;color:#fff;letter-spacing:.5px}.sidebar-brand small{display:block;font-size:10px;color:#a3c0ce}
+.nav-section{padding:15px 18px 7px;color:#82a2b7;font-size:10px;letter-spacing:1.1px;font-weight:800}
+aside#sidebar .nav{margin:1px 10px;width:calc(100% - 20px);font-size:13px;padding:11px 14px}
+aside#sidebar .nav.active{background:#178daf;color:#fff}aside#sidebar .nav:hover{background:#1e5670}
+aside#sidebar .nav i{width:24px;text-align:center}
+aside#sidebar .sidefoot{border-top:1px solid #ffffff20;margin-top:22px;padding:17px 20px}
+.main{padding:23px 24px 70px}.headline h1{font-size:25px}.frame,.stat{border-radius:10px;box-shadow:0 3px 15px #16354609}
+.event.gray,.pill.gray,.legend i.gray{background:#8657b5;color:#fff}
+.hamburger{display:none;background:transparent;border:0;color:#2b6179;font-size:23px}
+.side-backdrop{display:none}.mini-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:15px}.mini-kpi .stat{border-top:3px solid #1994b6}
+@media(max-width:1020px){aside#sidebar{width:211px;min-width:211px}.main{padding:18px 13px 70px}.mini-kpi{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:810px){.top{height:60px;padding:0 12px}.top .logo{font-size:16px}.hamburger{display:block}
+aside#sidebar{display:block;position:fixed;top:0;bottom:0;height:100dvh;width:264px;max-width:83vw;z-index:50;overflow-y:auto;transform:translateX(-106%);transition:transform .2s}
+body.menu-open aside#sidebar{transform:translateX(0)}body.menu-open .side-backdrop{display:block;position:fixed;inset:0;background:#0d233a88;z-index:45}
+.mobile{display:none}.main{padding:14px 10px 35px}}
+@media(max-width:540px){.mini-kpi{gap:8px}.mini-kpi .stat{padding:11px}.mini-kpi .stat b{font-size:19px}}
 </style></head>
 <body>
 <section id="authArea" class="autharea"><div class="authcard"><div class="logo"><span class="mark">JC</span>JC Temporada</div><h2 style="margin-top:24px">Acesso ao sistema</h2><p>Entre com seu e-mail e senha. Esta é a primeira versão conectada ao banco da JC Temporada.</p><form class="authform" id="authForm"><div class="field"><label>E-mail</label><input name="email" type="email" autocomplete="username" required placeholder="seu@email.com"></div><div class="field"><label>Senha</label><input name="password" type="password" autocomplete="current-password" minlength="6" required placeholder="Sua senha"></div><button class="btn" id="loginBtn" type="submit">Entrar</button><button class="btn secondary" id="registerBtn" type="button">Criar meu acesso</button><button class="linkbtn" id="resetBtn" type="button">Esqueci minha senha</button></form><div id="authMessage" aria-live="polite"></div><p class="tiny">Acesso protegido por Supabase Auth. A autenticação em duas etapas será configurada antes de usar dados de clientes.</p></div></section>
 <section id="setupArea" class="autharea hidden"><div class="authcard"><div class="logo"><span class="mark">JC</span>JC Temporada</div><h2 style="margin-top:24px">Criar espaço da empresa</h2><p>Você já entrou, mas ainda não está vinculado a uma empresa no sistema. Se este é o primeiro acesso do responsável, crie a organização JC Temporada.</p><form class="authform" id="setupForm"><div class="field"><label>Nome da empresa</label><input name="name" value="JC Temporada" required></div><div class="field"><label>Identificador exclusivo</label><input name="slug" value="jc-temporada" pattern="[a-z0-9][a-z0-9-]{2,62}" required></div><button class="btn" type="submit">Criar espaço JC Temporada</button></form><p class="tiny">Funcionários já cadastrados devem solicitar acesso ao administrador em vez de criar outra empresa.</p><div id="setupMessage" aria-live="polite"></div><button class="btn secondary" data-action="logout">Sair</button></div></section>
-<section id="appArea" class="hidden"><header class="top"><div class="logo"><span class="mark">JC</span>JC Temporada</div><div class="topright"><span class="live">BANCO CONECTADO · BETA</span><span class="email tiny" id="userEmail"></span><button class="btn secondary" data-action="logout">Sair</button></div></header><div class="shell"><aside id="sidebar"></aside><main class="main"><div class="headtitle" id="breadcrumb">JC Temporada</div><div class="headline"><div><h1 id="pageTitle"></h1><div class="sub" id="pageSubtitle"></div></div><div class="inline" id="actions"></div></div><div id="notice"></div><div id="content"></div></main></div><nav id="mobile" class="mobile"></nav></section>
+<section id="appArea" class="hidden"><header class="top"><div class="inline"><button type="button" class="hamburger" aria-controls="sidebar" aria-expanded="false" aria-label="Abrir menu lateral" data-action="toggleSidebar">☰</button><div class="logo"><span class="mark">JC</span>JC Temporada</div></div><div class="topright"><span class="live">BANCO CONECTADO · BETA</span><span class="email tiny" id="userEmail"></span><button class="btn secondary" data-action="logout">Sair</button></div></header><div class="shell"><aside id="sidebar"></aside><div class="side-backdrop" data-action="closeSidebar"></div><main class="main"><div class="headtitle" id="breadcrumb">JC Temporada</div><div class="headline"><div><h1 id="pageTitle"></h1><div class="sub" id="pageSubtitle"></div></div><div class="inline" id="actions"></div></div><div id="notice"></div><div id="content"></div></main></div><nav id="mobile" class="mobile"></nav></section>
 <div class="overlay hidden" id="overlay"><div class="modal"><div class="modalhead"><h2 id="modalTitle"></h2><button class="x" data-action="close">×</button></div><div id="modalBody" class="modalbody"></div><div id="modalButtons" class="modalbuttons"></div></div></div>
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
@@ -28,7 +53,7 @@ const dplus=(s,n)=>{let d=new Date(s+'T12:00:00');d.setDate(d.getDate()+n);retur
 const html=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const opts=(pairs,sel)=>pairs.map(p=>'<option value="'+html(p[0])+'" '+(String(sel)===String(p[0])?'selected':'')+'>'+html(p[1])+'</option>').join('');
-const nav=[['mapa','▦','Mapa de Ocupação'],['reservas','▤','Reservas'],['imoveis','⌂','Imóveis'],['hospedes','♙','Hóspedes'],['financeiro','＄','Financeiro']];
+const nav=[['painel','▣','Visão geral'],['mapa','▦','Calendário geral'],['reservas','▤','Achar reserva'],['recepcao','⇆','Recepção'],['imoveis','⌂','Imóveis'],['hospedes','♙','Hóspedes'],['tarifas','▥','Tarifas'],['financeiro','＄','Financeiro']];
 let state={user:null,org:null,role:null,page:'mapa',year:new Date().getFullYear(),month:new Date().getMonth(),units:[],groups:[],guests:[],entries:[],search:'',groupFilter:'all',visible:40,closed:{},editing:null,choosing:null,mode:'',range:null};
 let selectTrack=null,refreshing=false,operation=false;
 function msg(id,message,error=false){$(id).innerHTML=message?'<div class="status '+(error?'error':'ok')+'">'+html(message)+'</div>':''}
@@ -48,14 +73,38 @@ function cls(e){if(e.kind==='block')return 'red';if(e.kind==='maintenance')retur
 function status(e){return e.kind==='block'?'Bloqueio':e.kind==='maintenance'?'Manutenção':cls(e)==='yellow'?'Pré-reserva':cls(e)==='blue'?'Reserva parcial':'Reserva quitada'}
 function unit(id){return state.units.find(u=>u.id===id)}
 function guest(id){return state.guests.find(g=>g.id===id)}
-function render(){let titles={mapa:'Mapa de Ocupação',reservas:'Reservas',imoveis:'Imóveis',hospedes:'Hóspedes',financeiro:'Financeiro'};
+
+function closeSidebar(){document.body.classList.remove('menu-open');let b=document.querySelector('.hamburger');if(b)b.setAttribute('aria-expanded','false')}
+function render(){
+let titles={painel:'Visão geral',mapa:'Mapa de Ocupação',reservas:'Reservas',recepcao:'Recepção',imoveis:'Imóveis',hospedes:'Hóspedes',tarifas:'Tarifas',financeiro:'Financeiro'};
 $('breadcrumb').textContent='JC Temporada / '+titles[state.page]+' / '+(state.org.city||'Caldas Novas')+' - '+(state.org.state_code||'GO');
 $('pageTitle').textContent=titles[state.page];
-$('pageSubtitle').textContent=state.page==='mapa'?'Arraste do dia de entrada até o dia da saída para cadastrar.':'Dados conectados ao Supabase em tempo real após salvar.';
-$('sidebar').innerHTML='<div class="section">Central de reservas</div>'+nav.map(a=>'<button class="nav '+(state.page===a[0]?'active':'')+'" data-page="'+a[0]+'"><i>'+a[1]+'</i>'+a[2]+'</button>').join('')+'<div class="sidefoot">JC Temporada · Caldas Novas/GO<br>Acesso: '+html(state.role)+'<br>Integrações de canais ainda não ativadas.</div>';
-$('mobile').innerHTML=nav.map(a=>'<button class="'+(state.page===a[0]?'active':'')+'" data-page="'+a[0]+'"><i>'+a[1]+'</i>'+a[2].split(' ')[0]+'</button>').join('');
-$('actions').innerHTML=state.page==='imoveis'?'<button class="btn secondary" data-action="newGroup">+ Condomínio</button><button class="btn" data-action="newUnit">+ Imóvel</button>':state.page==='hospedes'?'<button class="btn" data-action="newGuest">+ Hóspede</button>':'<button class="btn secondary" data-action="newBlock">+ Bloqueio</button><button class="btn secondary" data-action="newMaintenance">+ Manutenção</button><button class="btn" data-action="newBooking">+ Pré-reserva</button>';
-$('content').innerHTML=state.page==='mapa'?renderCalendar():state.page==='reservas'?renderReservations():state.page==='imoveis'?renderProperties():state.page==='hospedes'?renderGuests():renderFinance()}
+$('pageSubtitle').textContent=state.page==='mapa'?'Selecione ou arraste datas livres para reservar, bloquear ou criar manutenção.':'Gestão integrada de hospedagens, com dados do Supabase.';
+let sections=[['MENU PRINCIPAL',nav.slice(0,1)],['CENTRAL DE RESERVAS',nav.slice(1,4)],['OPERAÇÃO',nav.slice(4,7)],['ADMINISTRAÇÃO',nav.slice(7,8)]];
+$('sidebar').innerHTML='<div class="sidebar-brand"><span class="sidebar-logo">JC</span><div><strong>JC TEMPORADA</strong><small>GESTÃO DE HOSPEDAGENS</small></div></div>'+
+sections.map(group=>'<div class="nav-section">'+group[0]+'</div>'+group[1].map(a=>'<button class="nav '+(state.page===a[0]?'active':'')+'" data-page="'+a[0]+'"><i>'+a[1]+'</i>'+a[2]+'</button>').join('')+(group[0]==='CENTRAL DE RESERVAS'?'<button class="nav" data-action="newBooking"><i>＋</i>Fazer reserva</button>':'')).join('')+
+'<div class="sidefoot">JC Temporada · '+html(state.org.city||'Caldas Novas')+'/'+html(state.org.state_code||'GO')+'<br>Acesso: '+html(state.role)+'<br>Integrações de canais ainda não ativadas.</div>';
+$('mobile').innerHTML='';
+$('actions').innerHTML=state.page==='imoveis'?'<button class="btn secondary" data-action="newGroup">+ Condomínio</button><button class="btn" data-action="newUnit">+ Imóvel</button>':state.page==='hospedes'?'<button class="btn" data-action="newGuest">+ Hóspede</button>':['mapa','reservas','recepcao'].includes(state.page)?'<button class="btn secondary" data-action="newBlock">+ Bloqueio</button><button class="btn secondary" data-action="newMaintenance">+ Manutenção</button><button class="btn" data-action="newBooking">+ Pré-reserva</button>':'';
+$('content').innerHTML=state.page==='painel'?renderDashboard():state.page==='mapa'?renderCalendar():state.page==='reservas'?renderReservations():state.page==='recepcao'?renderReception():state.page==='imoveis'?renderProperties():state.page==='hospedes'?renderGuests():state.page==='tarifas'?renderRates():renderFinance();
+}
+function renderDashboard(){
+let bookings=state.entries.filter(e=>e.kind==='reservation'),today=fmt(new Date()),prereg=bookings.filter(e=>cls(e)==='yellow').length;
+let due=bookings.reduce((v,e)=>v+Number(e.balance_due||0),0);
+return '<p class="sub">Resumo referente ao mês selecionado no calendário.</p><div class="mini-kpi">'+[
+['Imóveis ativos',state.units.length],['Pré-reservas',prereg],['Check-ins hoje',bookings.filter(e=>e.check_in===today).length],['Saldo a receber',money(due)]].map(a=>'<div class="stat"><small>'+a[0]+'</small><b>'+a[1]+'</b></div>').join('')+
+'</div><div class="frame"><div class="framehead"><h2>Central de reservas</h2></div><div class="inline" style="padding:16px"><button class="btn" data-action="newBooking">+ Fazer pré-reserva</button><button class="btn secondary" data-page="mapa">Mapa de ocupação</button><button class="btn secondary" data-page="reservas">Achar reserva</button></div></div>';
+}
+function renderReception(){
+let today=fmt(new Date()),data=state.entries.filter(e=>e.kind==='reservation');
+let table=(title,field)=>{let entries=data.filter(e=>e[field]===today);
+return '<div class="frame"><div class="framehead"><h2>'+title+' ('+entries.length+')</h2></div><div class="tablewrap"><table class="table"><thead><tr><th>Imóvel</th><th>Hóspede</th><th>Referência</th><th>Estado</th><th></th></tr></thead><tbody>'+entries.map(e=>'<tr><td>'+html(unit(e.property_id)?.name||'—')+'</td><td>'+html(guest(e.guest_id)?.full_name||'—')+'</td><td>'+html(e.internal_reference||'—')+'</td><td><span class="pill '+cls(e)+'">'+status(e)+'</span></td><td><button class="linkbtn" data-action="edit" data-id="'+e.id+'">Abrir</button></td></tr>').join('')+'</tbody></table>'+(entries.length?'':'<div class="empty">Nenhum registro para hoje.</div>')+'</div></div>'};
+return '<p class="sub">Movimentações de hoje ('+new Date().toLocaleDateString('pt-BR')+').</p>'+table('Check-ins','check_in')+table('Check-outs','check_out');
+}
+function renderRates(){
+return '<div class="frame"><div class="framehead"><h2>Tarifas base por imóvel</h2><span class="sub">Edite a diária base no cadastro do imóvel.</span></div><div class="tablewrap"><table class="table"><thead><tr><th>Código</th><th>Imóvel</th><th>Diária</th><th></th></tr></thead><tbody>'+
+state.units.map(u=>'<tr><td>'+html(u.internal_code||'—')+'</td><td>'+html(u.name)+'</td><td>'+money(u.base_nightly_rate)+'</td><td><button class="linkbtn" data-action="editUnit" data-id="'+u.id+'">Editar tarifa</button></td></tr>').join('')+'</tbody></table>'+(state.units.length?'':'<div class="empty">Cadastre um imóvel para definir tarifas.</div>')+'</div></div>';
+}
 function renderCalendar(){
 let max=new Date(state.year,state.month+1,0).getDate(),w=Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--day'))||72,width=max*w;
 let title=new Date(state.year,state.month,1).toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
@@ -261,7 +310,7 @@ document.addEventListener('pointerdown',event=>{let cell=event.target.closest('.
 document.addEventListener('pointermove',event=>{if(!selectTrack||event.pointerId!==selectTrack.pointerId)return;selectTrack.to=dayX(event.clientX,selectTrack.track);selectOverlay();event.preventDefault()});
 document.addEventListener('pointerup',event=>{if(!selectTrack||event.pointerId!==selectTrack.pointerId)return;let x=selectTrack;selectTrack=null;let st=Math.min(x.from,x.to),end=Math.max(x.from,x.to),s=fmt(new Date(state.year,state.month,st)),e=fmt(new Date(state.year,state.month,end));choose(x.unit,s,st===end?dplus(s,1):e);event.preventDefault()});
 document.addEventListener('pointercancel',()=>{if(selectTrack){selectTrack.track.querySelector('.selection')?.remove();selectTrack=null}});
-document.addEventListener('click',async event=>{let b=event.target.closest('[data-action],[data-page]');if(!b){if(event.target.id==='overlay')close();return}if(b.dataset.page){state.page=b.dataset.page;render();return}let a=b.dataset.action;
+document.addEventListener('click',async event=>{let b=event.target.closest('[data-action],[data-page]');if(!b){if(event.target.id==='overlay')close();return}if(b.dataset.page){state.page=b.dataset.page;closeSidebar();render();return}let a=b.dataset.action;if(a==='toggleSidebar'){let o=document.body.classList.toggle('menu-open');b.setAttribute('aria-expanded',String(o));return}if(a==='closeSidebar'){closeSidebar();return}
 if(a==='logout'){await supabase.auth.signOut();state.org=null;state.user=null;tab('authArea');return}if(a==='close'){close();return}
 if(a==='newUnit')return editSimple('property');if(a==='newGroup')return editSimple('group');if(a==='newGuest')return editSimple('guest');if(a==='editUnit')return editSimple('property',b.dataset.id);if(a==='editGuest')return editSimple('guest',b.dataset.id);
 if(a==='newBooking'||a==='unitBooking'){state.choosing=null;return editEntry('reservation',null,a==='unitBooking'?{unit:b.dataset.unit}:{})}
